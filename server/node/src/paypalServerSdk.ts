@@ -282,6 +282,7 @@ export async function createSetupTokenWithSampleDataForPayPal() {
           },
         },
         experienceContext: {
+          brandName: "Igify",
           cancelUrl: "https://example.com/cancelUrl",
           returnUrl: "https://example.com/returnUrl",
           vaultInstruction: VaultInstructionAction.OnPayerApproval,
