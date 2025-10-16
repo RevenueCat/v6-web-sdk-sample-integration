@@ -239,6 +239,7 @@ export async function createSetupTokenWithSampleDataForPayPal() {
       paypal: {
         usagePattern: UsagePattern.SubscriptionPrepaid,
         billingPlan: {
+          name: "Basic",
           billingCycles: [
             {
               tenureType: TenureType.Trial,
