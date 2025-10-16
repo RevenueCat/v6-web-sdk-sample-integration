@@ -26,6 +26,7 @@ import {
 import type {
   OAuthProviderError,
   OrderRequest,
+  Plan,
   SetupTokenRequest,
 } from "@paypal/paypal-server-sdk";
 
@@ -233,55 +234,89 @@ export async function createSetupToken(
   }
 }
 
+function trialBillingPlan(): Plan {
+  return {
+    name: "Basic",
+    billingCycles: [
+      {
+        tenureType: TenureType.Trial,
+        totalCycles: 1,
+        sequence: 1,
+        frequency: {
+          interval_unit: "WEEK",
+          interval_count: 1,
+        },
+        pricingScheme: {
+          pricingModel: PricingModel.Fixed,
+          price: {
+            currencyCode: "USD",
+            value: "0.00",
+          },
+        },
+      },
+      {
+        tenureType: TenureType.Regular,
+        totalCycles: 0,
+        sequence: 2,
+        frequency: {
+          interval_unit: "MONTH",
+          interval_count: 1,
+        },
+        startDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split("T")[0],
+        pricingScheme: {
+          pricingModel: PricingModel.Fixed,
+          price: {
+            currencyCode: "USD",
+            value: "29.99",
+          },
+        },
+      },
+    ],
+    oneTimeCharges: {
+      totalAmount: {
+        currencyCode: "USD",
+        value: "0.00",
+      },
+    },
+  }
+}
+
+function regularBillingPlan(): Plan {
+  return {
+    name: "Basic",
+    billingCycles: [
+      {
+        tenureType: TenureType.Regular,
+        totalCycles: 0,
+        sequence: 1,
+        frequency: {
+          interval_unit: "MONTH",
+          interval_count: 1,
+        },
+        pricingScheme: {
+          pricingModel: PricingModel.Fixed,
+          price: {
+            currencyCode: "USD",
+            value: "29.99",
+          },
+        },
+      },
+    ],
+    oneTimeCharges: {
+      totalAmount: {
+        currencyCode: "USD",
+        value: "29.99",
+      },
+    },
+  }
+}
+
 export async function createSetupTokenWithSampleDataForPayPal() {
   const defaultSetupTokenRequestBody = {
     paymentSource: {
       paypal: {
         usagePattern: UsagePattern.SubscriptionPrepaid,
-        billingPlan: {
-          name: "Basic",
-          billingCycles: [
-            {
-              tenureType: TenureType.Trial,
-              totalCycles: 1,
-              sequence: 1,
-              frequency: {
-                interval_unit: "WEEK",
-                interval_count: 1,
-              },
-              pricingScheme: {
-                pricingModel: PricingModel.Fixed,
-                price: {
-                  currencyCode: "USD",
-                  value: "0.00",
-                },
-              },
-            },
-            {
-              tenureType: TenureType.Regular,
-              totalCycles: 0,
-              sequence: 2,
-              frequency: {
-                interval_unit: "MONTH",
-                interval_count: 1,
-              },
-              startDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split("T")[0],
-              pricingScheme: {
-                pricingModel: PricingModel.Fixed,
-                price: {
-                  currencyCode: "USD",
-                  value: "100.00",
-                },
-              },
-            },
-          ],
-          oneTimeCharges: {
-            totalAmount: {
-              currencyCode: "USD",
-              value: "0.00",
-            },
-          },
-        },
+        billingPlan: trialBillingPlan(),
         experienceContext: {
           brandName: "Igify",
           cancelUrl: "https://example.com/cancelUrl",
