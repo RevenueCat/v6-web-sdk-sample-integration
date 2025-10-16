@@ -1,7 +1,7 @@
 import express, { Request, Response } from "express";
 import cors from "cors";
 
-import type { PaymentTokenResponse } from "@paypal/paypal-server-sdk";
+import { AmountBreakdown, AmountWithBreakdown, CheckoutPaymentIntent, Order, OrderRequest, PaymentSource, PurchaseUnit, PurchaseUnitRequest, Token, TokenType, type PaymentTokenResponse } from "@paypal/paypal-server-sdk";
 
 import {
   getBrowserSafeClientToken,
@@ -11,6 +11,7 @@ import {
   createPaymentToken,
   createSetupTokenWithSampleDataForPayPal,
 } from "./paypalServerSdk";
+import { randomUUID } from "node:crypto";
 
 const app = express();
 
@@ -117,6 +118,22 @@ app.post(
           description:
             "Payment token saved to database for future transactions",
         });
+
+        for (let i = 0; i < 2; i++) {
+          console.log("creating order", i);
+          const orderPayload = getPayPalOrderPayload(100, paymentTokenResponse.id);
+          const { jsonResponse, httpStatusCode } = await createOrder({ orderRequestBody: orderPayload, paypalRequestId: "CREATE_ORDER_TEST_" + randomUUID().slice(0, 8) });
+
+          if (httpStatusCode === 201) {
+            const orderId = (jsonResponse as Order).id;
+            console.log("order captured", orderId);
+          } else {
+            console.error("Failed to create order", jsonResponse);
+            break;
+          }
+
+          await new Promise(resolve => setTimeout(resolve, 2000));
+        }
       } else {
         res.status(httpStatusCode).json({
           status: "ERROR",
@@ -129,6 +146,32 @@ app.post(
     }
   },
 );
+
+function getPayPalOrderPayload(purchaseAmount: number, paymentTokenId: string) {
+  return {
+    intent: CheckoutPaymentIntent.Capture,
+    purchaseUnits: [
+      {
+        amount: {
+          currencyCode: "USD",
+          value: purchaseAmount.toString(),
+          breakdown: {
+            itemTotal: {
+              currencyCode: "USD",
+              value: purchaseAmount.toString(),
+            },
+          },
+        },
+      },
+    ],
+    paymentSource: {
+      token: {
+        id: paymentTokenId,
+        type: TokenType.BillingAgreement,
+      },
+    },
+  } as OrderRequest;
+}
 
 async function savePaymentTokenToDatabase(
   paymentTokenResponse: PaymentTokenResponse,
