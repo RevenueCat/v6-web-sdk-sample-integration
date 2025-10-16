@@ -12,8 +12,12 @@ import {
   Environment,
   LogLevel,
   OAuthAuthorizationController,
+  OrderApplicationContextShippingPreference,
   OrdersController,
   PaypalPaymentTokenUsageType,
+  PricingModel,
+  TenureType,
+  UsagePattern,
   VaultController,
   VaultInstructionAction,
   VaultTokenRequestType,
@@ -217,6 +221,8 @@ export async function createSetupToken(
     if (error instanceof ApiError) {
       const { result, statusCode } = error;
 
+      console.log("create setup token error", error);
+
       return {
         jsonResponse: result as CustomError,
         httpStatusCode: statusCode,
@@ -231,15 +237,60 @@ export async function createSetupTokenWithSampleDataForPayPal() {
   const defaultSetupTokenRequestBody = {
     paymentSource: {
       paypal: {
+        usagePattern: UsagePattern.SubscriptionPrepaid,
+        billingPlan: {
+          billingCycles: [
+            {
+              tenureType: TenureType.Trial,
+              totalCycles: 1,
+              sequence: 1,
+              frequency: {
+                interval_unit: "WEEK",
+                interval_count: 1,
+              },
+              pricingScheme: {
+                pricingModel: PricingModel.Fixed,
+                price: {
+                  currencyCode: "USD",
+                  value: "0.00",
+                },
+              },
+            },
+            {
+              tenureType: TenureType.Regular,
+              totalCycles: 0,
+              sequence: 2,
+              frequency: {
+                interval_unit: "MONTH",
+                interval_count: 1,
+              },
+              startDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split("T")[0],
+              pricingScheme: {
+                pricingModel: PricingModel.Fixed,
+                price: {
+                  currencyCode: "USD",
+                  value: "100.00",
+                },
+              },
+            },
+          ],
+          oneTimeCharges: {
+            totalAmount: {
+              currencyCode: "USD",
+              value: "0.00",
+            },
+          },
+        },
         experienceContext: {
           cancelUrl: "https://example.com/cancelUrl",
           returnUrl: "https://example.com/returnUrl",
           vaultInstruction: VaultInstructionAction.OnPayerApproval,
+          shippingPreference: OrderApplicationContextShippingPreference.NoShipping,
         },
         usageType: PaypalPaymentTokenUsageType.Merchant,
       },
     },
-  };
+  } as SetupTokenRequest;
 
   return createSetupToken(defaultSetupTokenRequestBody, Date.now().toString());
 }
@@ -260,6 +311,8 @@ export async function createPaymentToken(
         },
       },
     });
+
+    console.log("result", result);
 
     return {
       jsonResponse: result,
