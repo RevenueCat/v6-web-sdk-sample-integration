@@ -144,11 +144,15 @@ export async function createOrder({
       prefer: "return=minimal",
     });
 
+    console.log("create order result", result);
+
     return {
       jsonResponse: result,
       httpStatusCode: statusCode,
     };
   } catch (error) {
+
+    console.log("create order error", error);
     if (error instanceof ApiError) {
       const { result, statusCode } = error;
       return {
@@ -183,11 +187,15 @@ export async function captureOrder(orderId: string) {
       prefer: "return=minimal",
     });
 
+    console.log("capture order result", result);
+
     return {
       jsonResponse: result,
       httpStatusCode: statusCode,
     };
   } catch (error) {
+    console.log("capture order error", error);
+
     if (error instanceof ApiError) {
       const { result, statusCode } = error;
       return {
@@ -213,6 +221,8 @@ export async function createSetupToken(
       body: setupTokenRequestBody,
       paypalRequestId,
     });
+
+    console.log("create setup token result", result);
 
     return {
       jsonResponse: result,
@@ -349,7 +359,7 @@ export async function createPaymentToken(
       },
     });
 
-    console.log("result", result);
+    console.log("create payment token result", result);
 
     return {
       jsonResponse: result,
@@ -358,6 +368,8 @@ export async function createPaymentToken(
   } catch (error) {
     if (error instanceof ApiError) {
       const { result, statusCode } = error;
+
+      console.log("create payment token error", error);
 
       return {
         jsonResponse: result as CustomError,
