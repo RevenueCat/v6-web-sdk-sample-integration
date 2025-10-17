@@ -5,7 +5,7 @@ export default defineConfig({
   plugins: [],
   root: "src",
   server: {
-    port: 3000,
+    port: 3001,
     proxy: {
       "/paypal-api": {
         target: "http://localhost:8080",
