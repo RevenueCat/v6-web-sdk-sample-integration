@@ -14,8 +14,12 @@ import {
   OAuthAuthorizationController,
   OrderApplicationContextShippingPreference,
   OrdersController,
+  PaypalExperienceUserAction,
+  PaypalPaymentTokenCustomerType,
   PaypalPaymentTokenUsageType,
+  PaypalWalletContextShippingPreference,
   PricingModel,
+  StoreInVaultInstruction,
   TenureType,
   UsagePattern,
   VaultController,
@@ -24,6 +28,7 @@ import {
 } from "@paypal/paypal-server-sdk";
 
 import type {
+  BillingCycle,
   OAuthProviderError,
   OrderRequest,
   Plan,
@@ -172,11 +177,50 @@ export async function createOrderWithSampleData() {
       {
         amount: {
           currencyCode: "USD",
-          value: "100.00",
+          value: "29.99",
+          breakdown: {
+            itemTotal: {
+              currencyCode: "USD",
+              value: "29.99",
+            },
+          },
         },
+        items: [
+          {
+            name: "Billing Plan",
+            description: "Billing plan for subscriptions",
+            quantity: "1",
+            billingPlan: {
+                name: "Basic",
+                billingCycles: [regularBillingCycle(1)],
+            },
+            unitAmount: {
+              currencyCode: "USD",
+              value: "29.99",
+            },
+          }
+        ],
       },
     ],
-  };
+    paymentSource: {
+      paypal: {
+        attributes: {
+          vault: {
+            storeInVault: StoreInVaultInstruction.OnSuccess,
+            usageType: PaypalPaymentTokenUsageType.Merchant,
+            usagePattern: UsagePattern.SubscriptionPrepaid,
+          },
+        },
+        experienceContext: {
+          brandName: "Igify",
+          shippingPreference: PaypalWalletContextShippingPreference.NoShipping,
+          userAction: PaypalExperienceUserAction.Continue,
+          returnUrl: "https://example.com/returnUrl",
+          cancelUrl: "https://example.com/cancelUrl",
+        },
+      },
+    }
+  } as OrderRequest;
   return createOrder({ orderRequestBody });
 }
 
@@ -244,6 +288,26 @@ export async function createSetupToken(
   }
 }
 
+function regularBillingCycle(sequence: number = 1, startDate?: Date): BillingCycle {
+  return {
+    tenureType: TenureType.Regular,
+    totalCycles: 0,
+    sequence: sequence,
+    frequency: {
+      interval_unit: "MONTH",
+      interval_count: 1,
+    },
+    startDate: startDate?.toISOString().split("T")[0],
+    pricingScheme: {
+      pricingModel: PricingModel.Fixed,
+      price: {
+        currencyCode: "USD",
+        value: "29.99",
+      },
+    },
+  }
+}
+
 function trialBillingPlan(): Plan {
   return {
     name: "Basic",
@@ -264,23 +328,7 @@ function trialBillingPlan(): Plan {
           },
         },
       },
-      {
-        tenureType: TenureType.Regular,
-        totalCycles: 0,
-        sequence: 2,
-        frequency: {
-          interval_unit: "MONTH",
-          interval_count: 1,
-        },
-        startDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split("T")[0],
-        pricingScheme: {
-          pricingModel: PricingModel.Fixed,
-          price: {
-            currencyCode: "USD",
-            value: "29.99",
-          },
-        },
-      },
+      regularBillingCycle(2, new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)),
     ],
     oneTimeCharges: {
       totalAmount: {
@@ -295,22 +343,7 @@ function regularBillingPlan(): Plan {
   return {
     name: "Basic",
     billingCycles: [
-      {
-        tenureType: TenureType.Regular,
-        totalCycles: 0,
-        sequence: 1,
-        frequency: {
-          interval_unit: "MONTH",
-          interval_count: 1,
-        },
-        pricingScheme: {
-          pricingModel: PricingModel.Fixed,
-          price: {
-            currencyCode: "USD",
-            value: "29.99",
-          },
-        },
-      },
+      regularBillingCycle(1),
     ],
     oneTimeCharges: {
       totalAmount: {
