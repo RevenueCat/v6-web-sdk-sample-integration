@@ -362,8 +362,8 @@ export async function createSetupTokenWithSampleDataForPayPal() {
         billingPlan: trialBillingPlan(),
         experienceContext: {
           brandName: "Igify",
-          cancelUrl: "https://example.com/cancelUrl",
-          returnUrl: "https://example.com/returnUrl",
+          cancelUrl: "http://localhost:3001?cancel=true",
+          returnUrl: "http://localhost:3001?return=true",
           vaultInstruction: VaultInstructionAction.OnPayerApproval,
           shippingPreference: OrderApplicationContextShippingPreference.NoShipping,
         },

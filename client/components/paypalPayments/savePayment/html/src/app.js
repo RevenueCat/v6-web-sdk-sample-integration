@@ -41,13 +41,17 @@ async function setupPayPalButton(sdkInstance) {
     paymentSessionOptions,
   );
 
+  if (paypalPaymentSession.hasReturned()) {
+    await paypalPaymentSession.resume();
+  }
+
   const paypalButton = document.querySelector("#paypal-button");
   paypalButton.removeAttribute("hidden");
 
   paypalButton.addEventListener("click", async () => {
     try {
       await paypalPaymentSession.start(
-        { presentationMode: "auto" },
+        { presentationMode: "redirect" },
         createVaultSetupToken(),
       );
     } catch (error) {
