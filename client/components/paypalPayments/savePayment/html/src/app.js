@@ -20,13 +20,20 @@ async function onPayPalWebSdkLoaded() {
   }
 }
 
+async function resumePayPalPaymentSession() {
+  const params = new URLSearchParams(window.location.search);
+  const approvalTokenId = params.get("approval_token_id");
+
+  if (approvalTokenId) {
+    await createPaymentToken(approvalTokenId);
+  }
+}
+
+
 const paymentSessionOptions = {
   async onApprove(data) {
     console.log("onApprove", data);
-    const createPaymentTokenResponse = await createPaymentToken(
-      data.vaultSetupToken,
-    );
-    console.log("Create payment token response: ", createPaymentTokenResponse);
+    await createPaymentToken(data.vaultSetupToken);
   },
   onCancel(data) {
     console.log("onCancel", data);
@@ -41,9 +48,7 @@ async function setupPayPalButton(sdkInstance) {
     paymentSessionOptions,
   );
 
-  if (paypalPaymentSession.hasReturned()) {
-    await paypalPaymentSession.resume();
-  }
+  await resumePayPalPaymentSession();
 
   const paypalButton = document.querySelector("#paypal-button");
   paypalButton.removeAttribute("hidden");
@@ -93,6 +98,8 @@ async function createPaymentToken(vaultSetupToken) {
     body: JSON.stringify({ vaultSetupToken }),
   });
   const data = await response.json();
+
+  console.log("Create payment token response: ", data);
 
   return data;
 }
